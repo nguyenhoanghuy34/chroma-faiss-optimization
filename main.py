@@ -1,4 +1,6 @@
 from Chroma.chroma import execute_chroma
 
 
-execute_chroma(limit=10)
+if __name__ == "__main__":
+
+    execute_chroma()

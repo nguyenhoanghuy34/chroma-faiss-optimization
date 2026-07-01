@@ -6,3 +6,8 @@ faiss-cpu
 datasets
 numpy
 pandas
+
+sentence-transformers
+chromadb
+torch
+tqdm
