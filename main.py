@@ -1,3 +1,4 @@
-from Chroma.chroma import execute
+from Chroma.chroma import execute_chroma
 
-documents = execute(limit=10)
+
+execute_chroma(limit=10)
