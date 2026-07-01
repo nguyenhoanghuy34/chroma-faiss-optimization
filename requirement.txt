@@ -1,0 +1,8 @@
+
+fastapi
+uvicorn
+chromadb
+faiss-cpu
+datasets
+numpy
+pandas
