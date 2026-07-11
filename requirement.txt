@@ -10,5 +10,4 @@ pandas
 sentence-transformers
 chromadb
 
-torch
-tqdm
+pdf2image
