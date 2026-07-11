@@ -9,5 +9,6 @@ pandas
 
 sentence-transformers
 chromadb
+
 torch
 tqdm
