@@ -1,13 +1,7 @@
-
-fastapi
-uvicorn
+pymupdf
 chromadb
 faiss-cpu
-datasets
-numpy
-pandas
-
 sentence-transformers
-chromadb
-
-pdf2image
+numpy
+python-dotenv
+tqdm

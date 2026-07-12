@@ -1,17 +1,24 @@
-from config import LABOR_LAW_PDF_PATH
-from pypdf import PdfReader
 import os
+import fitz
+from config import LABOR_LAW_PDF_PATH
 
 
 def load_pdf():
-    print(LABOR_LAW_PDF_PATH)
 
-    reader = PdfReader(LABOR_LAW_PDF_PATH)
+    print("Đang đọc:", LABOR_LAW_PDF_PATH)
+
+    doc = fitz.open(LABOR_LAW_PDF_PATH)
 
     text = ""
 
-    for page in reader.pages:
-        text += page.extract_text() + "\n"
+    for page_number, page in enumerate(doc):
+
+        print(f"Đọc trang {page_number + 1}/{len(doc)}")
+
+        page_text = page.get_text()
+
+        text += page_text + "\n"
+
 
     output_path = os.path.join(
         "Dataset",
@@ -19,12 +26,14 @@ def load_pdf():
         "labor_law.txt"
     )
 
+
     with open(
         output_path,
         "w",
         encoding="utf-8"
-    ) as file:
-        file.write(text)
+    ) as f:
+        f.write(text)
+
 
     print("Đã lưu:", output_path)
 
