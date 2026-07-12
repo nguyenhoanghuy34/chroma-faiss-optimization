@@ -1,13 +1,10 @@
 from src.loader.pdf_loader import load_pdf
 from src.loader.txt_loader import load_txt
+from src.preprocessing.chunker import chunker
 
 def main():
 
-    text = load_txt()
-
-    print("\nPreview:")
-    print(text[:1000])
-
+    chunks = chunker()
 
 if __name__ == "__main__":
     main()

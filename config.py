@@ -16,3 +16,11 @@ LABOR_LAW_TXT_PATH = os.path.join(
     "labor_law",
     "labor_law.txt"
 )
+
+# Text đã làm sạch
+LABOR_LAW_CLEAN_TXT_PATH = os.path.join(
+    BASE_DIR,
+    "Dataset",
+    "labor_law",
+    "labor_law_clean.txt"
+)
