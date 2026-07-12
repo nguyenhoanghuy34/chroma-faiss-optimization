@@ -1,6 +1,6 @@
 from src.loader.pdf_loader import load_pdf
 from src.loader.txt_loader import load_txt
-from src.preprocessing.chunker import chunker
+from src.chunking.chunker import chunker
 
 def main():
 
