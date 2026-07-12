@@ -1,8 +1,10 @@
 import os
 import json
 import re
+from copy import deepcopy
 
 from config import LABOR_LAW_CLEAN_TXT_PATH
+
 
 
 OUTPUT_DIR = os.path.join(
@@ -12,154 +14,274 @@ OUTPUT_DIR = os.path.join(
     "processed"
 )
 
+
+TEMP_TREE_PATH = os.path.join(
+    OUTPUT_DIR,
+    "labor_law_tree.json"
+)
+
+
 OUTPUT_PATH = os.path.join(
     OUTPUT_DIR,
     "labor_law_chunks.json"
 )
 
 
+
+LAW_NAME = "Bộ luật Lao động 2019"
+
+
+
+# ===============================
+# READ
+# ===============================
+
+
 def read_file(path):
-    with open(path, "r", encoding="utf-8") as f:
+
+    with open(
+        path,
+        "r",
+        encoding="utf-8"
+    ) as f:
+
         return f.read()
 
 
-def split_articles(text):
-    """
-    Tách từng Điều
-    """
 
-    articles = re.split(
-        r"(?=Điều\s+\d+\.)",
-        text
-    )
-
-    return [
-        a.strip()
-        for a in articles
-        if re.search(r"Điều\s+\d+\.", a)
-    ]
+# ===============================
+# CLEAN
+# ===============================
 
 
-def extract_chapter(article_text):
-    """
-    Lấy Chương phía trước Điều
-    """
+def clean_lines(text):
 
-    match = re.search(
-        r"(Chương\s+[IVXLCDM]+.*?)(?=\nĐiều\s+\d+\.)",
-        article_text,
-        re.DOTALL
-    )
+    lines = []
 
-    if match:
-        return match.group(1).strip()
+    for line in text.split("\n"):
 
-    return None
+        line = line.strip()
+
+        if line:
+            lines.append(line)
+
+
+    return lines
 
 
 
-def clean_article(article_text):
-
-    """
-    Bỏ phần Chương ra khỏi Điều
-    """
-
-    article = re.sub(
-        r"^Chương\s+[IVXLCDM]+.*?\n(?=Điều)",
-        "",
-        article_text,
-        flags=re.DOTALL
-    )
-
-    return article.strip()
+# ===============================
+# PARSE TREE
+# ===============================
 
 
+def parse_structure(lines):
 
-def split_paragraph(article_text):
-
-    """
-    Tách khoản:
-
-    1.
-    2.
-    """
-
-    parts = re.split(
-        r"(?=\n\d+\.\s)",
-        article_text
-    )
-
-    return [
-        p.strip()
-        for p in parts
-        if p.strip()
-    ]
+    tree = []
 
 
-
-def split_points(paragraph):
-
-    """
-    Tách điểm:
-
-    a)
-    b)
-    c)
-    """
-
-    points = re.split(
-        r"(?=\n[a-zđ]\))",
-        paragraph
-    )
+    chapter = None
+    article = None
 
 
-    return [
-        p.strip()
-        for p in points
+    for line in lines:
+
+
+        # CHAPTER
+
         if re.match(
+            r"^Chương\s+[IVXLCDM]+",
+            line
+        ):
+
+            chapter = {
+
+                "title": line,
+
+                "articles": []
+
+            }
+
+            tree.append(
+                chapter
+            )
+
+            article = None
+
+
+
+        # ARTICLE
+
+        elif re.match(
+            r"^Điều\s+\d+\.",
+            line
+        ):
+
+
+            if chapter is None:
+
+                chapter = {
+
+                    "title": None,
+
+                    "articles": []
+
+                }
+
+                tree.append(
+                    chapter
+                )
+
+
+            article = {
+
+                "title": line,
+
+                "paragraphs": [],
+
+                "content": []
+
+            }
+
+
+            chapter["articles"].append(
+                article
+            )
+
+
+
+        # PARAGRAPH
+
+        elif re.match(
+            r"^\d+\.",
+            line
+        ):
+
+
+            if article:
+
+
+                paragraph = {
+
+                    "title": line,
+
+                    "points": []
+
+                }
+
+
+                article["paragraphs"].append(
+                    paragraph
+                )
+
+
+
+        # POINT
+
+        elif re.match(
             r"^[a-zđ]\)",
-            p.strip()
+            line
+        ):
+
+
+            if article and article["paragraphs"]:
+
+
+                article["paragraphs"][-1]["points"].append(
+                    line
+                )
+
+
+
+        # CONTENT
+
+        else:
+
+
+            if article:
+
+
+                if article["paragraphs"]:
+
+
+                    last = article["paragraphs"][-1]
+
+
+                    if last["points"]:
+
+                        last["points"][-1] += " " + line
+
+                    else:
+
+                        last["title"] += " " + line
+
+
+                else:
+
+                    article["content"].append(
+                        line
+                    )
+
+
+
+    return tree
+
+
+
+# ===============================
+# SAVE TREE DEBUG
+# ===============================
+
+
+def save_tree(tree):
+
+    os.makedirs(
+        OUTPUT_DIR,
+        exist_ok=True
+    )
+
+
+    with open(
+        TEMP_TREE_PATH,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+
+        json.dump(
+            tree,
+            f,
+            ensure_ascii=False,
+            indent=4
         )
-    ]
 
 
 
-def group_points(points):
+# ===============================
+# CHUNK UTIL
+# ===============================
+
+
+def split_children(items):
 
     """
-    Mỗi chunk:
-    - 2 đến 3 điểm
+    Không quá 4 con
+
+    ưu tiên 3
     """
-
-    if len(points) <= 3:
-        return [points]
-
 
     result = []
 
-    index = 0
 
-
-    while index < len(points):
-
-        remain = len(points) - index
-
-
-        if remain == 4:
-            size = 2
-
-        elif remain > 3:
-            size = 3
-
-        else:
-            size = remain
-
+    for i in range(
+        0,
+        len(items),
+        3
+    ):
 
         result.append(
-            points[index:index+size]
+            items[i:i+3]
         )
-
-        index += size
 
 
     return result
@@ -169,196 +291,306 @@ def group_points(points):
 def build_content(
         chapter,
         article,
-        paragraph,
-        points=None
+        children
 ):
+
 
     content = []
 
 
     if chapter:
-        content.append(chapter)
+
+        content.append(
+            chapter
+        )
 
 
-    content.append(article)
+    content.append(
+        article
+    )
 
 
-    if paragraph:
-        content.append(paragraph)
-
-
-    if points:
-        content.extend(points)
+    content.extend(
+        children
+    )
 
 
     return "\n".join(content)
 
 
 
-def create_chunk(
+# ===============================
+# CHUNK ARTICLE
+# ===============================
+
+
+def chunk_article(
         chunks,
         counter,
-        content,
         chapter,
-        article,
-        paragraph,
-        points
+        article
 ):
 
-    chunks.append({
 
-        "id":
-            f"labor_law_{counter}",
+    title = article["title"]
 
 
-        "content":
-            content,
+
+    # không có khoản
+
+    if not article["paragraphs"]:
 
 
-        "metadata": {
+        counter += 1
 
-            "law":
-                "Bộ luật Lao động 2019",
 
-            "chapter":
-                chapter,
+        chunks.append({
 
-            "article":
-                article.split("\n")[0],
+            "id":
+                f"labor_law_{counter}",
 
-            "paragraph":
-                paragraph.split("\n")[0]
-                if paragraph and re.match(r"^\d+\.", paragraph)
-                else None,
 
-            "points":
-                [
-                    p[:2]
-                    for p in points
-                ]
-                if points
-                else None,
+            "content":
+                build_content(
+                    chapter,
+                    title,
+                    article["content"]
+                ),
 
-            "has_points":
-                bool(points)
-        }
-    })
 
+            "metadata":{
+
+                "chapter":
+                    chapter,
+
+                "article":
+                    title,
+
+                "level":
+                    "article"
+
+            }
+
+        })
+
+
+        return counter
+
+
+
+    # có khoản
+
+
+    paragraphs = article["paragraphs"]
+
+
+
+    # kiểm tra có điểm
+
+    has_points = any(
+        len(x["points"]) > 0
+        for x in paragraphs
+    )
+
+
+
+    if not has_points:
+
+
+        groups = split_children(
+            [
+                x["title"]
+                for x in paragraphs
+            ]
+        )
+
+
+        for group in groups:
+
+
+            counter += 1
+
+
+            chunks.append({
+
+                "id":
+                    f"labor_law_{counter}",
+
+
+                "content":
+                    build_content(
+                        chapter,
+                        title,
+                        group
+                    ),
+
+
+                "metadata":{
+
+                    "chapter":
+                        chapter,
+
+                    "article":
+                        title,
+
+                    "children":
+                        group,
+
+                    "level":
+                        "paragraph"
+
+                }
+
+            })
+
+
+    else:
+
+
+
+        for paragraph in paragraphs:
+
+
+            points = paragraph["points"]
+
+
+            if not points:
+
+
+                counter += 1
+
+                chunks.append({
+
+                    "id":
+                    f"labor_law_{counter}",
+
+
+                    "content":
+                    build_content(
+                        chapter,
+                        title,
+                        [
+                            paragraph["title"]
+                        ]
+                    )
+
+                })
+
+                continue
+
+
+
+            groups = split_children(
+                points
+            )
+
+
+            for group in groups:
+
+
+                counter += 1
+
+
+                chunks.append({
+
+                    "id":
+                    f"labor_law_{counter}",
+
+
+                    "content":
+                    build_content(
+                        chapter,
+                        title,
+                        [
+                            paragraph["title"],
+                            *group
+                        ]
+                    ),
+
+
+                    "metadata":{
+
+                        "chapter":
+                            chapter,
+
+                        "article":
+                            title,
+
+                        "paragraph":
+                            paragraph["title"],
+
+                        "points":
+                            group,
+
+                        "level":
+                            "point"
+
+                    }
+
+                })
+
+
+    return counter
+
+
+
+# ===============================
+# MAIN
+# ===============================
 
 
 def chunker():
+
+
 
     text = read_file(
         LABOR_LAW_CLEAN_TXT_PATH
     )
 
 
-    articles = split_articles(text)
+    lines = clean_lines(
+        text
+    )
+
+
+    tree = parse_structure(
+        lines
+    )
+
+
+    # lưu cây trung gian
+
+    save_tree(
+        tree
+    )
+
 
 
     chunks = []
 
-    chunk_id = 0
 
-    current_chapter = None
-
-
-    for raw_article in articles:
-
-
-        chapter = extract_chapter(
-            raw_article
-        )
-
-
-        if chapter:
-            current_chapter = chapter
+    counter = 0
 
 
 
-        article = clean_article(
-            raw_article
-        )
+    for chapter in tree:
 
 
-        paragraphs = split_paragraph(
-            article
-        )
+        for article in chapter["articles"]:
 
 
-        for paragraph in paragraphs:
+            counter = chunk_article(
 
+                chunks,
 
-            points = split_points(
-                paragraph
+                counter,
+
+                chapter["title"],
+
+                article
+
             )
 
-
-            # =====================
-            # Không có điểm
-            # =====================
-
-            if not points:
-
-
-                chunk_id += 1
-
-
-                create_chunk(
-                    chunks,
-                    chunk_id,
-                    build_content(
-                        current_chapter,
-                        article,
-                        paragraph
-                    ),
-                    current_chapter,
-                    article,
-                    paragraph,
-                    None
-                )
-
-
-
-            # =====================
-            # Có điểm
-            # =====================
-
-            else:
-
-
-                groups = group_points(
-                    points
-                )
-
-
-                for group in groups:
-
-
-                    chunk_id += 1
-
-
-                    create_chunk(
-                        chunks,
-                        chunk_id,
-                        build_content(
-                            current_chapter,
-                            article,
-                            paragraph,
-                            group
-                        ),
-                        current_chapter,
-                        article,
-                        paragraph,
-                        group
-                    )
-
-
-
-    os.makedirs(
-        OUTPUT_DIR,
-        exist_ok=True
-    )
 
 
     with open(
@@ -367,20 +599,30 @@ def chunker():
         encoding="utf-8"
     ) as f:
 
+
         json.dump(
+
             chunks,
+
             f,
+
             ensure_ascii=False,
+
             indent=4
+
         )
 
 
-    print(
-        f"Created {len(chunks)} chunks"
-    )
 
     print(
-        f"Saved: {OUTPUT_PATH}"
+        "Total chunks:",
+        len(chunks)
+    )
+
+
+    print(
+        "Saved:",
+        OUTPUT_PATH
     )
 
 
