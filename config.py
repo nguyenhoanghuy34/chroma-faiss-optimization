@@ -47,3 +47,6 @@ EMBEDDING_MODEL_NAME = "BAAI/bge-m3"
 # ==========================
 
 RETRIEVAL_TOP_K = 5
+
+# Chroma collection
+CHROMA_COLLECTION_NAME = "labor_law_collection"
