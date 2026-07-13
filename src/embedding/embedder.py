@@ -1,6 +1,6 @@
 import json
+import os
 import chromadb
-
 from chromadb.utils import embedding_functions
 
 from config import (
@@ -9,6 +9,41 @@ from config import (
     EMBEDDING_MODEL_NAME,
     CHROMA_COLLECTION_NAME
 )
+
+
+def clean_metadata(metadata):
+    """
+    Chroma chỉ nhận metadata dạng:
+    str, int, float, bool
+
+    Không nhận:
+    list, dict
+    """
+
+    clean = {}
+
+    if not metadata:
+        return clean
+
+
+    for key, value in metadata.items():
+
+        if isinstance(value, list):
+
+            clean[key] = " | ".join(value)
+
+
+        elif isinstance(value, dict):
+
+            clean[key] = str(value)
+
+
+        else:
+
+            clean[key] = value
+
+
+    return clean
 
 
 
@@ -22,6 +57,7 @@ def create_embedding():
         "r",
         encoding="utf-8"
     ) as f:
+
         chunks = json.load(f)
 
 
@@ -31,6 +67,15 @@ def create_embedding():
     )
 
 
+    # tạo folder vector store
+
+    os.makedirs(
+        VECTOR_STORE_PATH,
+        exist_ok=True
+    )
+
+
+
     # Chroma persistent database
 
     client = chromadb.PersistentClient(
@@ -38,21 +83,29 @@ def create_embedding():
     )
 
 
-    # Embedding function
+
+    # Embedding model
 
     embedding_model = embedding_functions.SentenceTransformerEmbeddingFunction(
         model_name=EMBEDDING_MODEL_NAME
     )
 
 
+
     # Xóa collection cũ nếu build lại
 
     try:
+
         client.delete_collection(
             CHROMA_COLLECTION_NAME
         )
 
-    except:
+        print(
+            "Old collection deleted"
+        )
+
+    except Exception:
+
         pass
 
 
@@ -63,28 +116,37 @@ def create_embedding():
     )
 
 
+
     ids = []
     documents = []
     metadatas = []
 
 
+
     for item in chunks:
+
 
         ids.append(
             item["id"]
         )
 
+
         documents.append(
             item["content"]
         )
 
+
         metadatas.append(
-            item["metadata"]
+            clean_metadata(
+                item.get("metadata", {})
+            )
         )
 
 
 
-    print("Embedding and saving...")
+    print(
+        "Embedding and saving..."
+    )
 
 
     collection.add(
@@ -92,6 +154,7 @@ def create_embedding():
         documents=documents,
         metadatas=metadatas
     )
+
 
 
     print(

@@ -50,3 +50,15 @@ RETRIEVAL_TOP_K = 5
 
 # Chroma collection
 CHROMA_COLLECTION_NAME = "labor_law_collection"
+
+
+# ==========================
+# Vector Store
+# ==========================
+
+VECTOR_STORE_PATH = os.path.join(
+    BASE_DIR,
+    "Dataset",
+    "data",
+    "vector_store"
+)
