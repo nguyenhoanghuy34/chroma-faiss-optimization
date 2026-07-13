@@ -33,3 +33,17 @@ LABOR_LAW_CHUNKS_JSON_PATH = os.path.join(
     "processed",
     "labor_law_chunks.json"
 )
+
+
+# ==========================
+# Embedding Model
+# ==========================
+
+EMBEDDING_MODEL_NAME = "BAAI/bge-m3"
+
+
+# ==========================
+# Retrieval Config
+# ==========================
+
+RETRIEVAL_TOP_K = 5
