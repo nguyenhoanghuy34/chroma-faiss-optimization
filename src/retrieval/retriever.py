@@ -11,100 +11,55 @@ from config import (
 
 
 
-# =====================================
-# INITIALIZE CHROMA
-# =====================================
+def retrieve(query):
 
 
-client = chromadb.PersistentClient(
-    path=VECTOR_STORE_PATH
-)
+    client = chromadb.PersistentClient(
+        path=VECTOR_STORE_PATH
+    )
 
 
-
-embedding_function = (
-    embedding_functions
-    .SentenceTransformerEmbeddingFunction(
+    embedding_model = embedding_functions.SentenceTransformerEmbeddingFunction(
         model_name=EMBEDDING_MODEL_NAME
     )
-)
 
-
-
-try:
 
     collection = client.get_collection(
-
         name=CHROMA_COLLECTION_NAME,
-
-        embedding_function=embedding_function
-
+        embedding_function=embedding_model
     )
-
-
-except Exception as e:
-
-    raise Exception(
-        f"Cannot load collection: {CHROMA_COLLECTION_NAME}"
-    ) from e
-
-
-
-
-
-# =====================================
-# RETRIEVAL
-# =====================================
-
-
-def retrieve(query, top_k=RETRIEVAL_TOP_K):
 
 
     results = collection.query(
-
         query_texts=[
             query
         ],
-
-        n_results=top_k
-
+        n_results=RETRIEVAL_TOP_K
     )
 
+
+    documents = results["documents"][0]
+    metadatas = results["metadatas"][0]
+    ids = results["ids"][0]
+    distances = results["distances"][0]
 
 
     formatted_results = []
 
 
+    for i in range(len(documents)):
 
-    for i in range(
-        len(results["documents"][0])
-    ):
+        formatted_results.append({
 
+            "id": ids[i],
 
-        item = {
+            "content": documents[i],
 
-            "id":
-                results["ids"][0][i],
+            "metadata": metadatas[i],
 
+            "distance": distances[i]
 
-            "content":
-                results["documents"][0][i],
-
-
-            "metadata":
-                results["metadatas"][0][i],
-
-
-            "distance":
-                results["distances"][0][i]
-
-        }
-
-
-        formatted_results.append(
-            item
-        )
-
+        })
 
 
     return formatted_results

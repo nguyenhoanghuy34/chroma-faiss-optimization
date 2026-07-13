@@ -3,10 +3,9 @@ from src.llm.generator import generate_answer
 
 
 
-# ==========================
-# Build prompt
-# ==========================
-
+# =====================================
+# Build Prompt
+# =====================================
 
 def build_prompt(
         question,
@@ -21,7 +20,6 @@ def build_prompt(
 
         context += f"""
 [Điều luật {i+1}]
-
 {doc}
 
 """
@@ -30,30 +28,30 @@ def build_prompt(
     prompt = f"""
 Bạn là trợ lý pháp luật Việt Nam.
 
-Nhiệm vụ của bạn là trả lời câu hỏi dựa trên Bộ luật Lao động 2019.
-
-Chỉ sử dụng thông tin trong phần CONTEXT.
-Không tự suy đoán.
-Nếu không có thông tin, hãy trả lời:
+Nhiệm vụ:
+- Trả lời câu hỏi dựa trên Bộ luật Lao động 2019.
+- Chỉ sử dụng thông tin trong CONTEXT.
+- Không tự suy luận hoặc thêm thông tin ngoài dữ liệu.
+- Nếu CONTEXT không có câu trả lời, hãy trả lời:
 "Không tìm thấy quy định phù hợp trong dữ liệu."
 
-====================
-CONTEXT:
-====================
+========================
+CONTEXT
+========================
 
 {context}
 
 
-====================
-CÂU HỎI:
-====================
+========================
+CÂU HỎI
+========================
 
 {question}
 
 
-====================
-TRẢ LỜI:
-====================
+========================
+TRẢ LỜI
+========================
 
 """
 
@@ -63,18 +61,18 @@ TRẢ LỜI:
 
 
 
-
-# ==========================
-# RAG pipeline
-# ==========================
-
+# =====================================
+# RAG Pipeline
+# =====================================
 
 def ask(
         question
 ):
 
 
-    # 1. Retrieval
+    # -------------------------
+    # 1. Retrieve documents
+    # -------------------------
 
     results = retrieve(
         question
@@ -82,11 +80,31 @@ def ask(
 
 
 
-    documents = results["documents"][0]
+    if not results:
+
+        return "Không tìm thấy quy định phù hợp trong dữ liệu."
 
 
 
-    # 2. Build prompt
+    # -------------------------
+    # 2. Extract context
+    # -------------------------
+
+    documents = []
+
+
+    for item in results:
+
+
+        documents.append(
+            item["content"]
+        )
+
+
+
+    # -------------------------
+    # 3. Build prompt
+    # -------------------------
 
     prompt = build_prompt(
 
@@ -98,7 +116,9 @@ def ask(
 
 
 
-    # 3. Generate answer
+    # -------------------------
+    # 4. Generate answer
+    # -------------------------
 
     answer = generate_answer(
 

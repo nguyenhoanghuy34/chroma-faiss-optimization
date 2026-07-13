@@ -12,19 +12,20 @@ def main():
     của người lao động không?
     """
 
+    print("=" * 80)
+    print("QUESTION:")
+    print(question)
+
+    print("=" * 80)
+    print("START ASK")
+
     answer = ask(
         question
     )
 
-    print("="*70)
-
-    print(
-        "ANSWER:"
-    )
-
-    print(
-        answer
-    )
+    print("=" * 80)
+    print("ANSWER:")
+    print(answer)
 
 
 if __name__ == "__main__":
