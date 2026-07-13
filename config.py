@@ -24,3 +24,12 @@ LABOR_LAW_CLEAN_TXT_PATH = os.path.join(
     "labor_law",
     "labor_law_clean.txt"
 )
+
+# JSON chunks đã xử lý
+LABOR_LAW_CHUNKS_JSON_PATH = os.path.join(
+    BASE_DIR,
+    "Dataset",
+    "data",
+    "processed",
+    "labor_law_chunks.json"
+)
