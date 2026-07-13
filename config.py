@@ -62,3 +62,9 @@ VECTOR_STORE_PATH = os.path.join(
     "data",
     "vector_store"
 )
+
+# ==========================
+# LLM Model
+# ==========================
+
+LLM_MODEL_NAME = "Qwen/Qwen2.5-7B-Instruct"

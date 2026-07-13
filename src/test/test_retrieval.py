@@ -1,31 +1,66 @@
 from src.retrieval.retriever import retrieve
 
 
+
 def test_retrieval():
 
+
     query = """
-    Người sử dụng lao động có được giữ giấy tờ tùy thân của người lao động không?
+    Người lao động có quyền đơn phương chấm dứt hợp đồng lao động mà không cần báo trước trong những trường hợp nào?
     """
 
 
-    results = retrieve(query)
+
+    results = retrieve(
+        query
+    )
 
 
-    for i, doc in enumerate(results["documents"][0]):
 
-        print("=" * 50)
+    for i, result in enumerate(results):
 
-        print(f"Result {i + 1}")
-
-        print(doc)
-
-        print("\nMetadata:")
 
         print(
-            results["metadatas"][0][i]
+            "=" * 70
         )
 
 
-if __name__ == "__main__":
+        print(
+            f"RESULT {i+1}"
+        )
 
-    test_retrieval()
+
+        print(
+            "ID:",
+            result["id"]
+        )
+
+
+        print(
+            "Distance:",
+            result["distance"]
+        )
+
+
+        print(
+            "\nMetadata:"
+        )
+
+
+        print(
+            result["metadata"]
+        )
+
+
+        print(
+            "\nContent:"
+        )
+
+
+        print(
+            result["content"]
+        )
+
+
+
+        print()
