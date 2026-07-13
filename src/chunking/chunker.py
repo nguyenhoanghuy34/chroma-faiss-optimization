@@ -1,7 +1,6 @@
 import os
 import json
 import re
-from copy import deepcopy
 
 from config import LABOR_LAW_CLEAN_TXT_PATH
 
@@ -63,6 +62,7 @@ def clean_lines(text):
         line = line.strip()
 
         if line:
+
             lines.append(line)
 
 
@@ -87,7 +87,7 @@ def parse_structure(lines):
     for line in lines:
 
 
-        # CHAPTER
+        # Chương
 
         if re.match(
             r"^Chương\s+[IVXLCDM]+",
@@ -102,15 +102,17 @@ def parse_structure(lines):
 
             }
 
+
             tree.append(
                 chapter
             )
+
 
             article = None
 
 
 
-        # ARTICLE
+        # Điều
 
         elif re.match(
             r"^Điều\s+\d+\.",
@@ -122,15 +124,17 @@ def parse_structure(lines):
 
                 chapter = {
 
-                    "title": None,
+                    "title": "",
 
                     "articles": []
 
                 }
 
+
                 tree.append(
                     chapter
                 )
+
 
 
             article = {
@@ -150,7 +154,7 @@ def parse_structure(lines):
 
 
 
-        # PARAGRAPH
+        # Khoản
 
         elif re.match(
             r"^\d+\.",
@@ -176,7 +180,7 @@ def parse_structure(lines):
 
 
 
-        # POINT
+        # Điểm
 
         elif re.match(
             r"^[a-zđ]\)",
@@ -193,7 +197,7 @@ def parse_structure(lines):
 
 
 
-        # CONTENT
+        # Nội dung tiếp theo
 
         else:
 
@@ -211,9 +215,11 @@ def parse_structure(lines):
 
                         last["points"][-1] += " " + line
 
+
                     else:
 
                         last["title"] += " " + line
+
 
 
                 else:
@@ -223,13 +229,12 @@ def parse_structure(lines):
                     )
 
 
-
     return tree
 
 
 
 # ===============================
-# SAVE TREE DEBUG
+# SAVE TREE
 # ===============================
 
 
@@ -258,17 +263,58 @@ def save_tree(tree):
 
 
 # ===============================
+# METADATA STANDARD
+# ===============================
+
+
+def create_metadata(
+        chapter="",
+        article="",
+        paragraph="",
+        points=None,
+        level=""
+):
+
+
+    if points is None:
+
+        points = []
+
+
+
+    return {
+
+
+        "chapter":
+            chapter,
+
+
+        "article":
+            article,
+
+
+        "paragraph":
+            paragraph,
+
+
+        "points":
+            " | ".join(points),
+
+
+        "level":
+            level
+
+    }
+
+
+
+# ===============================
 # CHUNK UTIL
 # ===============================
 
 
 def split_children(items):
 
-    """
-    Không quá 4 con
-
-    ưu tiên 3
-    """
 
     result = []
 
@@ -336,7 +382,7 @@ def chunk_article(
 
 
 
-    # không có khoản
+    # Điều không có khoản
 
     if not article["paragraphs"]:
 
@@ -358,18 +404,12 @@ def chunk_article(
                 ),
 
 
-            "metadata":{
-
-                "chapter":
-                    chapter,
-
-                "article":
-                    title,
-
-                "level":
-                    "article"
-
-            }
+            "metadata":
+                create_metadata(
+                    chapter=chapter,
+                    article=title,
+                    level="article"
+                )
 
         })
 
@@ -378,30 +418,34 @@ def chunk_article(
 
 
 
-    # có khoản
-
-
     paragraphs = article["paragraphs"]
 
 
 
-    # kiểm tra có điểm
-
     has_points = any(
+
         len(x["points"]) > 0
+
         for x in paragraphs
+
     )
 
 
+
+    # Có khoản nhưng không có điểm
 
     if not has_points:
 
 
         groups = split_children(
+
             [
                 x["title"]
+
                 for x in paragraphs
+
             ]
+
         )
 
 
@@ -425,27 +469,21 @@ def chunk_article(
                     ),
 
 
-                "metadata":{
-
-                    "chapter":
-                        chapter,
-
-                    "article":
-                        title,
-
-                    "children":
-                        group,
-
-                    "level":
-                        "paragraph"
-
-                }
+                "metadata":
+                    create_metadata(
+                        chapter=chapter,
+                        article=title,
+                        paragraph=" | ".join(group),
+                        level="paragraph"
+                    )
 
             })
 
 
-    else:
 
+    # Có điểm
+
+    else:
 
 
         for paragraph in paragraphs:
@@ -454,27 +492,39 @@ def chunk_article(
             points = paragraph["points"]
 
 
+
             if not points:
 
 
                 counter += 1
 
+
                 chunks.append({
 
                     "id":
-                    f"labor_law_{counter}",
+                        f"labor_law_{counter}",
 
 
                     "content":
-                    build_content(
-                        chapter,
-                        title,
-                        [
-                            paragraph["title"]
-                        ]
-                    )
+                        build_content(
+                            chapter,
+                            title,
+                            [
+                                paragraph["title"]
+                            ]
+                        ),
+
+
+                    "metadata":
+                        create_metadata(
+                            chapter=chapter,
+                            article=title,
+                            paragraph=paragraph["title"],
+                            level="paragraph"
+                        )
 
                 })
+
 
                 continue
 
@@ -483,6 +533,7 @@ def chunk_article(
             groups = split_children(
                 points
             )
+
 
 
             for group in groups:
@@ -494,40 +545,31 @@ def chunk_article(
                 chunks.append({
 
                     "id":
-                    f"labor_law_{counter}",
+                        f"labor_law_{counter}",
 
 
                     "content":
-                    build_content(
-                        chapter,
-                        title,
-                        [
-                            paragraph["title"],
-                            *group
-                        ]
-                    ),
-
-
-                    "metadata":{
-
-                        "chapter":
+                        build_content(
                             chapter,
-
-                        "article":
                             title,
+                            [
+                                paragraph["title"],
+                                *group
+                            ]
+                        ),
 
-                        "paragraph":
-                            paragraph["title"],
 
-                        "points":
-                            group,
-
-                        "level":
-                            "point"
-
-                    }
+                    "metadata":
+                        create_metadata(
+                            chapter=chapter,
+                            article=title,
+                            paragraph=paragraph["title"],
+                            points=group,
+                            level="point"
+                        )
 
                 })
+
 
 
     return counter
@@ -540,7 +582,6 @@ def chunk_article(
 
 
 def chunker():
-
 
 
     text = read_file(
@@ -557,8 +598,6 @@ def chunker():
         lines
     )
 
-
-    # lưu cây trung gian
 
     save_tree(
         tree
@@ -591,6 +630,12 @@ def chunker():
 
             )
 
+
+
+    os.makedirs(
+        OUTPUT_DIR,
+        exist_ok=True
+    )
 
 
     with open(

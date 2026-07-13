@@ -11,31 +11,100 @@ from config import (
 
 
 
-def retrieve(query):
+# =====================================
+# INITIALIZE CHROMA
+# =====================================
 
 
-    client = chromadb.PersistentClient(
-        path=VECTOR_STORE_PATH
-    )
+client = chromadb.PersistentClient(
+    path=VECTOR_STORE_PATH
+)
 
 
-    embedding_model = embedding_functions.SentenceTransformerEmbeddingFunction(
+
+embedding_function = (
+    embedding_functions
+    .SentenceTransformerEmbeddingFunction(
         model_name=EMBEDDING_MODEL_NAME
     )
+)
 
+
+
+try:
 
     collection = client.get_collection(
+
         name=CHROMA_COLLECTION_NAME,
-        embedding_function=embedding_model
+
+        embedding_function=embedding_function
+
     )
+
+
+except Exception as e:
+
+    raise Exception(
+        f"Cannot load collection: {CHROMA_COLLECTION_NAME}"
+    ) from e
+
+
+
+
+
+# =====================================
+# RETRIEVAL
+# =====================================
+
+
+def retrieve(query, top_k=RETRIEVAL_TOP_K):
 
 
     results = collection.query(
+
         query_texts=[
             query
         ],
-        n_results=RETRIEVAL_TOP_K
+
+        n_results=top_k
+
     )
 
 
-    return results
+
+    formatted_results = []
+
+
+
+    for i in range(
+        len(results["documents"][0])
+    ):
+
+
+        item = {
+
+            "id":
+                results["ids"][0][i],
+
+
+            "content":
+                results["documents"][0][i],
+
+
+            "metadata":
+                results["metadatas"][0][i],
+
+
+            "distance":
+                results["distances"][0][i]
+
+        }
+
+
+        formatted_results.append(
+            item
+        )
+
+
+
+    return formatted_results

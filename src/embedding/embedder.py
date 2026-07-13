@@ -1,6 +1,7 @@
 import json
 import os
 import chromadb
+
 from chromadb.utils import embedding_functions
 
 from config import (
@@ -11,45 +12,75 @@ from config import (
 )
 
 
+
+# =====================================
+# CLEAN METADATA FOR CHROMA
+# =====================================
+
 def clean_metadata(metadata):
-    """
-    Chroma chỉ nhận metadata dạng:
-    str, int, float, bool
 
-    Không nhận:
-    list, dict
+    """
+    Chroma metadata chỉ nhận:
+    str | int | float | bool
     """
 
-    clean = {}
-
-    if not metadata:
-        return clean
+    result = {}
 
 
-    for key, value in metadata.items():
+    default_keys = [
+        "chapter",
+        "article",
+        "paragraph",
+        "points",
+        "level"
+    ]
+
+
+    # đảm bảo luôn đủ field
+
+    for key in default_keys:
+
+        value = metadata.get(
+            key,
+            ""
+        )
+
 
         if isinstance(value, list):
 
-            clean[key] = " | ".join(value)
+            value = " | ".join(value)
 
 
         elif isinstance(value, dict):
 
-            clean[key] = str(value)
+            value = str(value)
 
 
-        else:
+        elif value is None:
 
-            clean[key] = value
-
-
-    return clean
+            value = ""
 
 
+        result[key] = str(value)
+
+
+
+    return result
+
+
+
+
+# =====================================
+# CREATE EMBEDDING
+# =====================================
 
 def create_embedding():
 
-    print("Loading chunks...")
+
+    print(
+        "Loading chunks..."
+    )
+
 
 
     with open(
@@ -67,6 +98,7 @@ def create_embedding():
     )
 
 
+
     # tạo folder vector store
 
     os.makedirs(
@@ -76,7 +108,10 @@ def create_embedding():
 
 
 
-    # Chroma persistent database
+    # ===============================
+    # Chroma client
+    # ===============================
+
 
     client = chromadb.PersistentClient(
         path=VECTOR_STORE_PATH
@@ -84,25 +119,35 @@ def create_embedding():
 
 
 
+    # ===============================
     # Embedding model
+    # ===============================
 
-    embedding_model = embedding_functions.SentenceTransformerEmbeddingFunction(
-        model_name=EMBEDDING_MODEL_NAME
+
+    embedding_function = (
+        embedding_functions
+        .SentenceTransformerEmbeddingFunction(
+            model_name=EMBEDDING_MODEL_NAME
+        )
     )
 
 
 
-    # Xóa collection cũ nếu build lại
+    # ===============================
+    # Remove old collection
+    # ===============================
+
 
     try:
 
         client.delete_collection(
-            CHROMA_COLLECTION_NAME
+            name=CHROMA_COLLECTION_NAME
         )
 
         print(
-            "Old collection deleted"
+            "Deleted old collection"
         )
+
 
     except Exception:
 
@@ -110,17 +155,28 @@ def create_embedding():
 
 
 
+
     collection = client.create_collection(
+
         name=CHROMA_COLLECTION_NAME,
-        embedding_function=embedding_model
+
+        embedding_function=embedding_function
+
     )
 
 
 
     ids = []
+
     documents = []
+
     metadatas = []
 
+
+
+    # ===============================
+    # Prepare data
+    # ===============================
 
 
     for item in chunks:
@@ -137,9 +193,14 @@ def create_embedding():
 
 
         metadatas.append(
+
             clean_metadata(
-                item.get("metadata", {})
+                item.get(
+                    "metadata",
+                    {}
+                )
             )
+
         )
 
 
@@ -149,10 +210,20 @@ def create_embedding():
     )
 
 
+
+    # ===============================
+    # Add to Chroma
+    # ===============================
+
+
     collection.add(
+
         ids=ids,
+
         documents=documents,
+
         metadatas=metadatas
+
     )
 
 
@@ -163,5 +234,15 @@ def create_embedding():
 
 
     print(
-        f"Saved at: {VECTOR_STORE_PATH}"
+        f"Saved vector store: {VECTOR_STORE_PATH}"
     )
+
+
+
+    print(
+        f"Collection: {CHROMA_COLLECTION_NAME}"
+    )
+
+
+
+    return collection
