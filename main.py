@@ -8,8 +8,7 @@ from src.rag.pipeline import ask
 def main():
 
     question = """
-    Người sử dụng lao động có được giữ giấy tờ tùy thân
-    của người lao động không?
+    Một công ty yêu cầu người lao động nộp bản gốc căn cước công dân (CCCD) để giữ trong suốt thời gian làm việc nhằm đảm bảo người lao động không tự ý nghỉ việc. Theo quy định của pháp luật lao động Việt Nam, việc làm này có hợp pháp không? Nếu không, người sử dụng lao động có thể bị xử lý như thế nào?
     """
 
     print("=" * 80)
