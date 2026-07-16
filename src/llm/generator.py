@@ -4,6 +4,7 @@ from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM
 )
+
 from config import LLM_MODEL_NAME
 
 _model = None

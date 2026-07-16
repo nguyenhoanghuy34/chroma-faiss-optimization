@@ -67,4 +67,4 @@ VECTOR_STORE_PATH = os.path.join(
 # LLM Model
 # ==========================
 
-LLM_MODEL_NAME = "Qwen/Qwen2.5-7B-Instruct"
+LLM_MODEL_NAME = "Qwen/Qwen2.5-1.5B-Instruct"
