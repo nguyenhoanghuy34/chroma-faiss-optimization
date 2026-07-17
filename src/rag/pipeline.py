@@ -22,7 +22,7 @@ def build_prompt(
     - Trả lời câu hỏi dựa trên Bộ luật Lao động 2019.
     - Không tự suy luận hoặc thêm thông tin ngoài dữ liệu.
     - Nếu CONTEXT không có câu trả lời, hãy trả lời:
-    "Không tìm thấy quy định phù hợp trong dữ liệu." không trả lời gì thêm
+    "Không tìm thấy quy định phù hợp trong dữ liệu." không trả lời gì thêm!!
 
 ========================
 CONTEXT
