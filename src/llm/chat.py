@@ -1,42 +1,17 @@
-import os
-
 from src.llm.generator import load_llm
 
 
-BASE_DIR = os.path.dirname(
-    os.path.dirname(__file__)
-)
-
-PROMPT_PATH = os.path.join(
-    BASE_DIR,
-    "prompts",
-    "router.txt"
-)
-
-
-def load_prompt():
-
-    with open(
-        PROMPT_PATH,
-        "r",
-        encoding="utf-8"
-    ) as f:
-
-        return f.read()
-
-
-def route_question(question: str):
+def generate_answer(
+    prompt: str,
+    max_tokens: int = 512
+):
 
     model, tokenizer = load_llm()
-
-    prompt = load_prompt()
 
     messages = [
         {
             "role": "user",
-            "content":
-                prompt +
-                f"\n\nCâu hỏi:\n{question}"
+            "content": prompt
         }
     ]
 
@@ -58,19 +33,17 @@ def route_question(question: str):
 
     outputs = model.generate(
         **inputs,
-        max_new_tokens=5,
-        do_sample=False,
+        max_new_tokens=max_tokens,
+        temperature=0.7,
+        do_sample=True,
         pad_token_id=tokenizer.eos_token_id
     )
 
     generated_ids = outputs[0][inputs["input_ids"].shape[1]:]
 
-    result = tokenizer.decode(
+    answer = tokenizer.decode(
         generated_ids,
         skip_special_tokens=True
-    ).strip().lower()
+    ).strip()
 
-    if "labor_law" in result:
-        return "labor_law"
-
-    return "general"
+    return answer
