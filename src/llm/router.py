@@ -1,13 +1,10 @@
 import os
-
 from transformers import GenerationConfig
-
-from llm.generator import load_llm
+from src.llm.generator import load_llm
 
 BASE_DIR = os.path.dirname(
     os.path.dirname(__file__)
 )
-
 PROMPT_PATH = os.path.join(
     BASE_DIR,
     "prompts",
