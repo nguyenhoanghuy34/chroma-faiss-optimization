@@ -4,27 +4,21 @@ from src.chunking.chunker import chunker
 from src.embedding.embedder import create_embedding
 from src.test.test_retrieval import test_retrieval
 from src.rag.pipeline import ask
+from src.routing.router_service import route
+
 
 def main():
 
-    question = """
-    Người lao động có được đơn phương chấm dứt hợp đồng lao động mà không cần báo trước trong trường hợp nào?
-    """
+    question = input("Question: ")
 
-    print("=" * 80)
-    print("QUESTION:")
-    print(question)
+    result = route(question)
 
-    print("=" * 80)
-    print("START ASK")
+    print()
 
-    answer = ask(
-        question
-    )
+    print("=" * 50)
 
-    print("=" * 80)
-    print("ANSWER:")
-    print(answer)
+    print(result)
+
 
 
 if __name__ == "__main__":
