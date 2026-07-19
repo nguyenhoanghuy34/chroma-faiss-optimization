@@ -1,8 +1,12 @@
 from pathlib import Path
 
-from src.llm.generator import generate_answer
+from src.llm.chat import generate_answer
 from src.rag.pipeline import rag_pipeline
-from src.routing.routes import GENERAL, LABOR_LAW
+
+from src.routing.routes import (
+    GENERAL,
+    LABOR_LAW
+)
 
 
 PROMPT_PATH = (
@@ -13,7 +17,12 @@ PROMPT_PATH = (
 
 
 def load_chat_prompt():
-    with open(PROMPT_PATH, "r", encoding="utf-8") as f:
+
+    with open(
+        PROMPT_PATH,
+        "r",
+        encoding="utf-8"
+    ) as f:
         return f.read()
 
 
@@ -22,11 +31,17 @@ def dispatch(route: str, question: str):
     if route == GENERAL:
 
         prompt = load_chat_prompt()
-        prompt = prompt.replace("{question}", question)
+        prompt = prompt.replace(
+            "{question}",
+            question
+        )
 
         return generate_answer(prompt)
 
-    if route == LABOR_LAW:
+    elif route == LABOR_LAW:
+
         return rag_pipeline(question)
 
-    raise ValueError(f"Unknown route: {route}")
+    raise ValueError(
+        f"Unknown route: {route}"
+    )

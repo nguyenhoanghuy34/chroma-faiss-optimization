@@ -7,7 +7,6 @@ from transformers import (
 
 from config import LLM_MODEL_NAME
 
-
 _model = None
 _tokenizer = None
 
